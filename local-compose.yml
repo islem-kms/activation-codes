@@ -1,0 +1,63 @@
+version: '3'
+services:
+
+  #PHP Service
+  qutenza_code_manager_app:
+    build:
+      context: .
+    image: kms/api_qutenza_code_manager
+    container_name: qutenza_code_manager_app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/local/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - qutenza_code_manager-app-network
+
+  #Nginx Service
+  qutenza_code_manager_webserver:
+    image: nginx:alpine
+    container_name: qutenza_code_manager_webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8899:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/local/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - qutenza_code_manager-app-network
+
+  #MySQL Service
+  qutenza_code_manager_db:
+    image: mysql:5.7.22
+    container_name: qutenza_code_manager_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33099:3306"
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: secretPASSWORD
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - qutenza_code_manager_dbdata:/var/lib/mysql/
+      - ./docker/local/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - qutenza_code_manager-app-network
+
+#Docker Networks
+networks:
+  qutenza_code_manager-app-network:
+    driver: bridge
+
+#Volumes
+volumes:
+  qutenza_code_manager_dbdata:
+    driver: local
